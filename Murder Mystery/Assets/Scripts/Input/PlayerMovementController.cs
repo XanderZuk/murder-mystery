@@ -4,13 +4,14 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Mirror;
 using System;
+using System.IO.MemoryMappedFiles;
 
 namespace Scripts.Input
 {
     public class PlayerMovementController : NetworkBehaviour
     {
         [SerializeField] public float movementSpeed = 10f;
-        [SerializeField] public float gravity = -9.81f;
+        [SerializeField] public float gravity = -16.81f;
         [SerializeField] private CharacterController controller = null;
 
         public Transform groundCheck;
@@ -20,6 +21,9 @@ namespace Scripts.Input
         private Vector2 previousInput;
         private Controls controls;
         private bool isGrounded;
+        public Vector3 lastInput;
+        public Vector3 right;
+        public Vector3 forward;
 
         Vector3 velocity;
 
@@ -62,18 +66,24 @@ namespace Scripts.Input
                 velocity.y = -2f;
             }
 
-            Vector3 right = controller.transform.right;
-            Vector3 forward = controller.transform.forward;
+            right = controller.transform.right;
+            forward = controller.transform.forward;
             right.y = 0f;
             forward.y = 0f;
+            Vector3 movement;
+
 
             if (isGrounded)
             {
-                Vector3 movement = right.normalized * previousInput.x + forward.normalized * previousInput.y;
-                controller.Move(movement * movementSpeed * Time.deltaTime);
+                movement = right.normalized * previousInput.x + forward.normalized * previousInput.y;
             }
-         
-            
+            else
+            {
+                movement = right.normalized * previousInput.x + lastInput;
+            }
+            controller.Move(movement * movementSpeed * Time.deltaTime);
+
+
             velocity.y += gravity * Time.deltaTime;
             controller.Move(velocity * Time.deltaTime);
         }
@@ -83,6 +93,9 @@ namespace Scripts.Input
         {
             if (isGrounded)
             {
+                lastInput = previousInput.x * right.normalized + previousInput.y * forward.normalized;
+                lastInput.y = 0;
+                
                 velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 controller.Move(velocity * Time.deltaTime);
             }
