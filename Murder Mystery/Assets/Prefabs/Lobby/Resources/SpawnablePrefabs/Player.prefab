@@ -154,6 +154,8 @@ MonoBehaviour:
   syncInterval: 0.1
   movementSpeed: 10
   gravity: -9.81
+  crouchMultiplier: 0.5
+  sprintMultiplier: 1.5
   controller: {fileID: 6155070216492107832}
   groundCheck: {fileID: 7127335859928745376}
   groundMask:

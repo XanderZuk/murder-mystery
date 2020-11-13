@@ -12,6 +12,8 @@ namespace Scripts.Input
     {
         [SerializeField] public float movementSpeed = 10f;
         [SerializeField] public float gravity = -16.81f;
+        [SerializeField] public float crouchMultiplier = 1f;
+        [SerializeField] public float sprintMultiplier = 1f;
         [SerializeField] private CharacterController controller = null;
 
         public Transform groundCheck;
@@ -21,9 +23,11 @@ namespace Scripts.Input
         private Vector2 previousInput;
         private Controls controls;
         private bool isGrounded;
-        public Vector3 lastInput;
-        public Vector3 right;
-        public Vector3 forward;
+        private bool isSprinting;
+        private bool isCrouching;
+        private Vector3 lastInput;
+        private Vector3 right;
+        private Vector3 forward;
 
         Vector3 velocity;
 
@@ -45,6 +49,10 @@ namespace Scripts.Input
             Controls.Player.Move.performed += ctx => SetMovement(ctx.ReadValue<Vector2>());
             Controls.Player.Move.canceled += ctx => ResetMovement();
             Controls.Player.Jump.performed += ctx => Jump();
+            Controls.Player.Crouch.performed += ctx => isCrouching = true;
+            Controls.Player.Crouch.canceled += ctx => isCrouching = false;
+            Controls.Player.Sprint.performed += ctx => isSprinting = true;
+            Controls.Player.Sprint.canceled += ctx => isSprinting = false;
         }
 
         [ClientCallback]
@@ -81,11 +89,28 @@ namespace Scripts.Input
             {
                 movement = right.normalized * previousInput.x + lastInput;
             }
-            controller.Move(movement * movementSpeed * Time.deltaTime);
+            controller.Move(movement * calculateMovementSpeed() * Time.deltaTime);
 
 
             velocity.y += gravity * Time.deltaTime;
             controller.Move(velocity * Time.deltaTime);
+        }
+
+        private float calculateMovementSpeed()
+        {
+            if (previousInput.y > 0 && isCrouching)
+            {
+                return movementSpeed * crouchMultiplier;
+            }
+            else if (previousInput.y > 0 && isSprinting)
+            {
+                return movementSpeed * sprintMultiplier;
+            }
+            else if (isCrouching)
+            {
+                //Implement Crouch Animation
+            }
+            return movementSpeed;
         }
 
         [Client]
