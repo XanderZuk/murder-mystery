@@ -16,6 +16,7 @@ namespace Scripts.Input
         [SerializeField] public float sprintMultiplier = 1f;
         [SerializeField] private CharacterController controller = null;
 
+        Animator anim;
         public Transform groundCheck;
         public LayerMask groundMask;
         public float groundDistance = 0.4f;
@@ -46,6 +47,7 @@ namespace Scripts.Input
         public override void OnStartAuthority()
         {
             enabled = true;
+            anim = GetComponent<Animator>();
             Controls.Player.Move.performed += ctx => SetMovement(ctx.ReadValue<Vector2>());
             Controls.Player.Move.canceled += ctx => ResetMovement();
             Controls.Player.Jump.performed += ctx => Jump();
@@ -84,6 +86,7 @@ namespace Scripts.Input
             if (isGrounded)
             {
                 movement = right.normalized * previousInput.x + forward.normalized * previousInput.y;
+                anim.SetBool("isWalking", true);
             }
             else
             {
