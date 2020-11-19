@@ -86,7 +86,18 @@ namespace Scripts.Input
             if (isGrounded)
             {
                 movement = right.normalized * previousInput.x + forward.normalized * previousInput.y;
-                anim.SetBool("isWalking", true);
+
+                if (!isSprinting)
+                {
+                    anim.SetFloat("xInput", right.normalized.x / 2);
+                    anim.SetFloat("yInput", right.normalized.z / 2);
+                }
+                else
+                {
+                    anim.SetFloat("xInput", right.normalized.x);
+                    anim.SetFloat("yInput", right.normalized.z);
+                }
+                
             }
             else
             {
