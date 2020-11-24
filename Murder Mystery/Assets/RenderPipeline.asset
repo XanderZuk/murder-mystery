@@ -343,7 +343,9 @@ MonoBehaviour:
   availableMaterialQualityLevels: -1
   m_DefaultMaterialQualityLevel: 4
   diffusionProfileSettings: {fileID: 0}
-  diffusionProfileSettingsList: []
+  diffusionProfileSettingsList:
+  - {fileID: 11400000, guid: 874bbcf6e1b986c4d8c79fecdba1d6c5, type: 2}
+  - {fileID: 11400000, guid: d7e94d4ca1951844ead4b3e8e45e36ba, type: 2}
   beforeTransparentCustomPostProcesses: []
   beforePostProcessCustomPostProcesses: []
   afterPostProcessCustomPostProcesses: []
