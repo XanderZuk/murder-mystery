@@ -16,7 +16,7 @@ namespace Scripts.Input
         [SerializeField] public float sprintMultiplier = 1f;
         [SerializeField] private CharacterController controller = null;
 
-        public Animator anim;
+        Animator anim;
         public Transform groundCheck;
         public LayerMask groundMask;
         public float groundDistance = 0.4f;
@@ -26,8 +26,6 @@ namespace Scripts.Input
         private bool isGrounded;
         private bool isSprinting;
         private bool isCrouching;
-        private bool isWalking;
-        private bool isJumping;
         private Vector3 lastInput;
         private Vector3 right;
         private Vector3 forward;
@@ -49,6 +47,7 @@ namespace Scripts.Input
         public override void OnStartAuthority()
         {
             enabled = true;
+            anim = GetComponent<Animator>();
             Controls.Player.Move.performed += ctx => SetMovement(ctx.ReadValue<Vector2>());
             Controls.Player.Move.canceled += ctx => ResetMovement();
             Controls.Player.Jump.performed += ctx => Jump();
@@ -65,56 +64,11 @@ namespace Scripts.Input
         private void OnDisable() => Controls.Disable();
 
         [ClientCallback]
-        private void Update()
-        {
-            Move();
-            UpdateAnimations();
-        }
-        private void UpdateAnimations()
-        {
-            if (isGrounded)
-            {
-                if (isCrouching)
-                {
-                    anim.SetBool("isCrouching", true);
-                    anim.SetBool("isWalking", false);
-                    anim.SetBool("isJumping", false);
-                    anim.SetBool("isDead", false);
-                }
-                else
-                {
-                    anim.SetBool("isCrouching", false);
-                    anim.SetBool("isWalking", true);
-                    anim.SetBool("isJumping", false);
-                    anim.SetBool("isDead", false);
-                }
-                
-                if (isSprinting)
-                {
-                    anim.SetFloat("xInput", previousInput.normalized.x);
-                    anim.SetFloat("yInput", previousInput.normalized.y);
-                }
-                else if (isCrouching)
-                {
-                    anim.SetFloat("xInput", previousInput.normalized.x);
-                    anim.SetFloat("yInput", previousInput.normalized.y);
-                }
-                else
-                {
-                    anim.SetFloat("xInput", previousInput.normalized.x / 2);
-                    anim.SetFloat("yInput", previousInput.normalized.y / 2);
-                }
-            }
-        }
-   
+        private void Update() => Move();
+
         [Client]
         private void Move()
         {
-            if (isCrouching == true && isSprinting == true)
-            {
-                isCrouching = false;
-            }
-
             isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
             if (isGrounded && velocity.y < 0)
@@ -131,22 +85,32 @@ namespace Scripts.Input
 
             if (isGrounded)
             {
-                isJumping = false;
                 movement = right.normalized * previousInput.x + forward.normalized * previousInput.y;
+
+                if (!isSprinting)
+                {
+                    anim.SetFloat("xInput", right.normalized.x / 2);
+                    anim.SetFloat("yInput", right.normalized.z / 2);
+                }
+                else
+                {
+                    anim.SetFloat("xInput", right.normalized.x);
+                    anim.SetFloat("yInput", right.normalized.z);
+                }
+                
             }
             else
             {
                 movement = right.normalized * previousInput.x + lastInput;
             }
-
-            controller.Move(movement * CalculateMovementSpeed() * Time.deltaTime);
+            controller.Move(movement * calculateMovementSpeed() * Time.deltaTime);
 
 
             velocity.y += gravity * Time.deltaTime;
             controller.Move(velocity * Time.deltaTime);
         }
 
-        private float CalculateMovementSpeed()
+        private float calculateMovementSpeed()
         {
             if (previousInput.y > 0 && isCrouching)
             {
@@ -156,6 +120,10 @@ namespace Scripts.Input
             {
                 return movementSpeed * sprintMultiplier;
             }
+            else if (isCrouching)
+            {
+                //Implement Crouch Animation
+            }
             return movementSpeed;
         }
 
@@ -163,19 +131,12 @@ namespace Scripts.Input
         private void Jump()
         {
             if (isGrounded)
-            {   
-                anim.SetBool("isCrouching", false);
-                anim.SetBool("isWalking", false);
-                anim.SetBool("isJumping", true);
-                anim.SetBool("isDead", false);
-                
-                isJumping = true;
+            {
                 lastInput = previousInput.x * right.normalized + previousInput.y * forward.normalized;
                 lastInput.y = 0;
                 
                 velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 controller.Move(velocity * Time.deltaTime);
-                
             }
         }
 
