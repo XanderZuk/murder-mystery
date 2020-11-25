@@ -22,7 +22,11 @@ namespace Scripts.MainMenu
         [SyncVar(hook = nameof(HandleReadyStatusChanged))]
         public bool IsReady = false;
         private bool isLeader;
-        
+
+        private void Start()
+        {
+            LoadPlayerSlots();
+        }
         public bool IsLeader
         {
             set
@@ -45,7 +49,7 @@ namespace Scripts.MainMenu
 
         private void LoadPlayerSlots()
         {
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < Room.maxPlayers; i++)
             {
                 playerSlots[i].SetActive(true);
             }

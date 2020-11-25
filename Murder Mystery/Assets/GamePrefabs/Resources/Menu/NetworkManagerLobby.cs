@@ -4,6 +4,7 @@ using UnityEngine;
 using Mirror;
 using System;
 using System.Linq;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 namespace Scripts.MainMenu
@@ -11,9 +12,11 @@ namespace Scripts.MainMenu
     public class NetworkManagerLobby : NetworkManager
     {
         [SerializeField] private int minPlayers = 2;
+        [SerializeField] public int maxPlayers { get; set; }
         [Scene] [SerializeField] private string menuScene = string.Empty;
         [Header("Room")]
         [SerializeField] private NetworkRoomPlayerLobby roomPlayerPrefab = null;
+        [SerializeField] public Dropdown Dropdown;
 
         [Header("Game")]
         [SerializeField] private NetworkGamePlayerLobby gamePlayerPrefab = null;
@@ -27,7 +30,7 @@ namespace Scripts.MainMenu
         public static event Action<NetworkConnection> OnServerReadied;
 
         public override void OnStartServer() => spawnPrefabs = Resources.LoadAll<GameObject>("SpawnablePrefabs").ToList();
-                
+
         // Iterate over all items in folder to register them
         public override void OnStartClient()
         {
@@ -38,6 +41,7 @@ namespace Scripts.MainMenu
                 ClientScene.RegisterPrefab(prefab);
             }
         }
+
 
         public override void OnClientConnect(NetworkConnection conn)
         {
@@ -87,6 +91,8 @@ namespace Scripts.MainMenu
             }
             base.OnServerDisconnect(conn);
         }
+
+        
 
         public void NotifyPlayersOfReadyState()
         {
@@ -165,6 +171,17 @@ namespace Scripts.MainMenu
                 NetworkServer.Spawn(playerSpawnSystemInstance);
             }
         }
+        public void SaveMaxPlayers()
+        {
+            maxPlayers = Dropdown.value + 2;
+            Debug.Log($"max players = {maxPlayers}");
+        }
+        
+
+
+        
+
+        
 
        
     }
