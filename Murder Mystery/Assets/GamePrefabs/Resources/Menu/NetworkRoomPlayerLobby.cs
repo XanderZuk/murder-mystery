@@ -17,15 +17,28 @@ namespace Scripts.MainMenu
         private NetworkManagerLobby room;
 
         //Sync Var variables can only be changed on the server
+        [SyncVar]
+        public int MaxPlayers;
         [SyncVar(hook = nameof(HandleDisplayNameChanged))]
         public string DisplayName = "Loading...";
         [SyncVar(hook = nameof(HandleReadyStatusChanged))]
+        
+
+
         public bool IsReady = false;
         private bool isLeader;
 
         private void Start()
         {
-            LoadPlayerSlots();
+            if(isLeader)
+            {
+                MaxPlayers = Room.maxPlayers;
+            }
+            Debug.Log($"max players = {MaxPlayers}");
+            for (int i = 0; i < MaxPlayers; i++)
+            {
+                playerSlots[i].SetActive(true);
+            }
         }
         public bool IsLeader
         {
@@ -49,7 +62,8 @@ namespace Scripts.MainMenu
 
         private void LoadPlayerSlots()
         {
-            for (int i = 0; i < Room.maxPlayers; i++)
+            Debug.Log($"max players = {MaxPlayers}");
+            for (int i = 0; i < MaxPlayers; i++)
             {
                 playerSlots[i].SetActive(true);
             }

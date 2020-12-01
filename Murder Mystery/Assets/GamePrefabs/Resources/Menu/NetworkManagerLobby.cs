@@ -174,7 +174,7 @@ namespace Scripts.MainMenu
         public void SaveMaxPlayers()
         {
             maxPlayers = Dropdown.value + 2;
-            Debug.Log($"max players = {maxPlayers}");
+            Debug.Log($"max playerss = {maxPlayers}");
         }
         
 
