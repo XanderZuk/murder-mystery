@@ -22,47 +22,29 @@ namespace Scripts.Input
         public float groundDistance = 0.4f;
         public float jumpHeight = 3f;
         private Vector2 previousInput;
-        private Controls controls;
         private bool isGrounded;
         private bool isSprinting;
         private bool isCrouching;
         private bool isWalking;
-        private bool isJumping;
+        
         private Vector3 lastInput;
         private Vector3 right;
         private Vector3 forward;
-
         Vector3 velocity;
 
-        private Controls Controls
-        {
-            get
-            {
-                if (controls != null)
-                {
-                    return controls;
-                }
-                return controls = new Controls();
-            }
-        }
 
         public override void OnStartAuthority()
         {
             enabled = true;
-            Controls.Player.Move.performed += ctx => SetMovement(ctx.ReadValue<Vector2>());
-            Controls.Player.Move.canceled += ctx => ResetMovement();
-            Controls.Player.Jump.performed += ctx => Jump();
-            Controls.Player.Crouch.performed += ctx => isCrouching = true;
-            Controls.Player.Crouch.canceled += ctx => isCrouching = false;
-            Controls.Player.Sprint.performed += ctx => isSprinting = true;
-            Controls.Player.Sprint.canceled += ctx => isSprinting = false;
+            InputManager.Controls.Player.Move.performed += ctx => SetMovement(ctx.ReadValue<Vector2>());
+            InputManager.Controls.Player.Move.canceled += ctx => ResetMovement();
+            InputManager.Controls.Player.Jump.performed += ctx => Jump();
+            InputManager.Controls.Player.Crouch.performed += ctx => isCrouching = true;
+            InputManager.Controls.Player.Crouch.canceled += ctx => isCrouching = false;
+            InputManager.Controls.Player.Sprint.performed += ctx => isSprinting = true;
+            InputManager.Controls.Player.Sprint.canceled += ctx => isSprinting = false;
         }
 
-        [ClientCallback]
-        private void OnEnable() => Controls.Enable();
-
-        [ClientCallback]
-        private void OnDisable() => Controls.Disable();
 
         [ClientCallback]
         private void Update()
@@ -131,7 +113,6 @@ namespace Scripts.Input
 
             if (isGrounded)
             {
-                isJumping = false;
                 movement = right.normalized * previousInput.x + forward.normalized * previousInput.y;
             }
             else
@@ -169,7 +150,6 @@ namespace Scripts.Input
                 anim.SetBool("isJumping", true);
                 anim.SetBool("isDead", false);
 
-                isJumping = true;
                 lastInput = previousInput.x * right.normalized + previousInput.y * forward.normalized;
                 lastInput.y = 0;
 
