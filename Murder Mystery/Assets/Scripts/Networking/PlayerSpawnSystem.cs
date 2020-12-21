@@ -4,13 +4,26 @@ using UnityEngine;
 using Mirror;
 using System.Linq;
 using Scripts.Input;
-
+using Scripts.Player;
 
 namespace Scripts.Networking
 {
     public class PlayerSpawnSystem : NetworkBehaviour
     {
         [SerializeField] private GameObject playerPrefab = null;
+
+        private NetworkManagerLobby room;
+        private NetworkManagerLobby Room
+        {
+            get
+            {
+                if (room != null)
+                {
+                    return room;
+                }
+                return room = NetworkManager.singleton as NetworkManagerLobby;
+            }
+        }
 
         private static List<Transform> spawnPoints = new List<Transform>();
         private int nextIndex = 0;
@@ -47,7 +60,13 @@ namespace Scripts.Networking
             }
 
             GameObject playerInstance = Instantiate(playerPrefab, spawnPoints[nextIndex].position, spawnPoints[nextIndex].rotation);
+
+            // Link NetworkGamePlayerLobby with new player instance.
+            Room.GetThisPlayer(conn).playerGameManager = playerInstance.GetComponent<PlayerGameManager>();
+            playerInstance.GetComponent<PlayerGameManager>().gamePlayerLobby = Room.GetMyPlayer();
+            playerInstance.GetComponent<PlayerGameManager>().life = playerInstance.GetComponent<Life>();
             NetworkServer.Spawn(playerInstance, conn);
+           
             nextIndex++;
 
         }

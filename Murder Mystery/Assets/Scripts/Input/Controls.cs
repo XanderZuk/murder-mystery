@@ -1,4 +1,4 @@
-// GENERATED AUTOMATICALLY FROM 'Assets/Prefabs/Lobby/Input/Controls.inputactions'
+// GENERATED AUTOMATICALLY FROM 'Assets/GamePrefabs/Input/Controls.inputactions'
 
 using System;
 using System.Collections;
@@ -56,6 +56,14 @@ namespace Scripts.Input
                     ""name"": ""Sprint"",
                     ""type"": ""Button"",
                     ""id"": ""91fbd54e-4241-4732-9ba0-ef9ca8ecd8be"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Kill"",
+                    ""type"": ""Button"",
+                    ""id"": ""ac70a03f-f9fa-4bc5-9760-596b0562a890"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
@@ -160,6 +168,17 @@ namespace Scripts.Input
                     ""action"": ""Sprint"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""28044549-d18c-409a-9e38-19a386a331fa"",
+                    ""path"": ""<Keyboard>/k"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard & Mouse"",
+                    ""action"": ""Kill"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -190,6 +209,7 @@ namespace Scripts.Input
             m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
             m_Player_Crouch = m_Player.FindAction("Crouch", throwIfNotFound: true);
             m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
+            m_Player_Kill = m_Player.FindAction("Kill", throwIfNotFound: true);
         }
 
         public void Dispose()
@@ -244,6 +264,7 @@ namespace Scripts.Input
         private readonly InputAction m_Player_Jump;
         private readonly InputAction m_Player_Crouch;
         private readonly InputAction m_Player_Sprint;
+        private readonly InputAction m_Player_Kill;
         public struct PlayerActions
         {
             private @Controls m_Wrapper;
@@ -253,6 +274,7 @@ namespace Scripts.Input
             public InputAction @Jump => m_Wrapper.m_Player_Jump;
             public InputAction @Crouch => m_Wrapper.m_Player_Crouch;
             public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
+            public InputAction @Kill => m_Wrapper.m_Player_Kill;
             public InputActionMap Get() { return m_Wrapper.m_Player; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -277,6 +299,9 @@ namespace Scripts.Input
                     @Sprint.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSprint;
                     @Sprint.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSprint;
                     @Sprint.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSprint;
+                    @Kill.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnKill;
+                    @Kill.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnKill;
+                    @Kill.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnKill;
                 }
                 m_Wrapper.m_PlayerActionsCallbackInterface = instance;
                 if (instance != null)
@@ -296,6 +321,9 @@ namespace Scripts.Input
                     @Sprint.started += instance.OnSprint;
                     @Sprint.performed += instance.OnSprint;
                     @Sprint.canceled += instance.OnSprint;
+                    @Kill.started += instance.OnKill;
+                    @Kill.performed += instance.OnKill;
+                    @Kill.canceled += instance.OnKill;
                 }
             }
         }
@@ -316,6 +344,7 @@ namespace Scripts.Input
             void OnJump(InputAction.CallbackContext context);
             void OnCrouch(InputAction.CallbackContext context);
             void OnSprint(InputAction.CallbackContext context);
+            void OnKill(InputAction.CallbackContext context);
         }
     }
 }

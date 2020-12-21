@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 using Mirror;
 using System;
 using System.IO.MemoryMappedFiles;
+using Scripts.Player;
+using Scripts.Networking;
 
 namespace Scripts.Input
 {
@@ -15,6 +17,20 @@ namespace Scripts.Input
         [SerializeField] public float crouchMultiplier = 1f;
         [SerializeField] public float sprintMultiplier = 1f;
         [SerializeField] private CharacterController controller = null;
+        private Life life = null;
+
+        private NetworkManagerLobby room;
+        private NetworkManagerLobby Room
+        {
+            get
+            {
+                if (room != null)
+                {
+                    return room;
+                }
+                return room = NetworkManager.singleton as NetworkManagerLobby;
+            }
+        }
 
         public Animator anim;
         public Transform groundCheck;
@@ -25,7 +41,7 @@ namespace Scripts.Input
         private bool isGrounded;
         private bool isSprinting;
         private bool isCrouching;
-        private bool isWalking;
+        private bool isDead;
         
         private Vector3 lastInput;
         private Vector3 right;
@@ -36,6 +52,7 @@ namespace Scripts.Input
         public override void OnStartAuthority()
         {
             enabled = true;
+            life = gameObject.GetComponent<Life>();
             InputManager.Controls.Player.Move.performed += ctx => SetMovement(ctx.ReadValue<Vector2>());
             InputManager.Controls.Player.Move.canceled += ctx => ResetMovement();
             InputManager.Controls.Player.Jump.performed += ctx => Jump();
@@ -43,6 +60,7 @@ namespace Scripts.Input
             InputManager.Controls.Player.Crouch.canceled += ctx => isCrouching = false;
             InputManager.Controls.Player.Sprint.performed += ctx => isSprinting = true;
             InputManager.Controls.Player.Sprint.canceled += ctx => isSprinting = false;
+            InputManager.Controls.Player.Kill.performed += ctx => KillEnemy();
         }
 
 
@@ -56,6 +74,14 @@ namespace Scripts.Input
         {
             if (isGrounded)
             {
+                if (isDead)
+                {
+                    anim.SetBool("isCrouching", false);
+                    anim.SetBool("isWalking", false);
+                    anim.SetBool("isJumping", false);
+                    anim.SetBool("isDead", true);
+                    return;
+                }
                 if (isCrouching)
                 {
                     anim.SetBool("isCrouching", true);
@@ -99,6 +125,7 @@ namespace Scripts.Input
 
             isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
+            // Forces player onto ground
             if (isGrounded && velocity.y < 0)
             {
                 velocity.y = -2f;
@@ -143,8 +170,10 @@ namespace Scripts.Input
         [Client]
         private void Jump()
         {
+
             if (isGrounded)
             {
+                Debug.Log("Jumped");
                 anim.SetBool("isCrouching", false);
                 anim.SetBool("isWalking", false);
                 anim.SetBool("isJumping", true);
@@ -157,6 +186,45 @@ namespace Scripts.Input
                 controller.Move(velocity * Time.deltaTime);
 
             }
+        }
+        
+        [Client]
+        private void KillEnemy()
+        {
+            Debug.LogWarning("Ran Kill Enemy");
+            if (((life.IsMurderer) || (life.IsDetective)) && life.IsAlive)
+            {
+                CmdKillEnemy();
+                Debug.LogWarning("Ran CmdKill Enemy");
+            }
+            
+        }
+
+        [Command]   
+        private void CmdKillEnemy()
+        {
+            Debug.Log("CmdKillEnemy");
+            NetworkGamePlayerLobby closestPlayer = null;
+            float distanceToPlayer = 1000000;
+
+            foreach (var player in Room.LivingPlayers)
+            {
+                float distance = Vector3.Distance(player.playerGameManager.gameObject.transform.position, gameObject.transform.position);
+                if ((distance < distanceToPlayer) && distance != 0) 
+                {
+                    distanceToPlayer = distance;
+                    closestPlayer = player;
+                }
+            }
+
+            if (distanceToPlayer <= 5)
+            {
+                Debug.LogWarning($"closest player = {closestPlayer.DisplayName}");
+                Debug.LogWarning($"**************** found closest player at {distanceToPlayer}");
+                closestPlayer.playerGameManager.life.KillPlayer();
+                Debug.LogWarning("Killed player");
+            }
+
         }
 
         [Client]

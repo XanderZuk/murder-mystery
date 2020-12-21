@@ -27,6 +27,8 @@ namespace Scripts.Networking
 
         [Header("Room")]
         [SerializeField] private NetworkRoomPlayerLobby roomPlayerPrefab = null;
+
+        [Header("UI")]
         [SerializeField] private Dropdown playerDropdown = null;
         [SerializeField] private Dropdown murdererDropdown = null;
         [SerializeField] private Dropdown detectiveDropdown = null;
@@ -43,6 +45,7 @@ namespace Scripts.Networking
         public List<NetworkGamePlayerLobby> Detectives { get; } = new List<NetworkGamePlayerLobby>();
         public List<NetworkGamePlayerLobby> Innocents { get; } = new List<NetworkGamePlayerLobby>();
         public List<NetworkGamePlayerLobby> DeadPlayers { get; } = new List<NetworkGamePlayerLobby>();
+        public List<NetworkGamePlayerLobby> LivingPlayers { get; } = new List<NetworkGamePlayerLobby>();
 
         private MapHandler mapHandler = null;
 
@@ -75,13 +78,16 @@ namespace Scripts.Networking
             startButton.interactable = true;
         }
 
+
         // Takes players from game player list and assigns them roles
+        [ServerCallback]
         public void ChooseRoles()
         {
             
             foreach (var player in GamePlayers)
             {
                 Innocents.Add(player);
+                LivingPlayers.Add(player);
             }
 
             // Recalculate roles if there are not enough players to fill them
@@ -137,7 +143,40 @@ namespace Scripts.Networking
                 Detectives.Add(Innocents[randomIndex]);
                 Innocents.Remove(Innocents[randomIndex]);
             }
+            AssignRoles();
             
+        }
+
+        // Sets the roles to NetworkGamePlayerLobby and PlayerGameManager
+        [ServerCallback]
+        private void AssignRoles()
+        {
+            foreach (var player in Murderers)
+            {
+                player.IsMurderer = true;
+                player.playerGameManager.life.IsMurderer = true;
+                player.IsDetective = false;
+                player.playerGameManager.life.IsDetective = false;
+            }
+            foreach (var player in Detectives)
+            {
+                player.IsDetective = true;
+                player.playerGameManager.life.IsDetective = true;
+                player.IsMurderer = false;
+                player.playerGameManager.life.IsMurderer = false;
+
+            }
+            foreach (var player in Innocents)
+            {
+                player.playerGameManager.life.IsMurderer = false;
+                player.playerGameManager.life.IsDetective = false;
+                player.IsDetective = false;
+                player.IsMurderer = false;
+            }
+            foreach (var player in GamePlayers)
+            {
+                Debug.Log($"IsMurderer = {player.playerGameManager.life.IsMurderer.ToString()}");
+            }
         }
 
         public override void OnClientConnect(NetworkConnection conn)
@@ -177,7 +216,7 @@ namespace Scripts.Networking
                 NetworkServer.AddPlayerForConnection(conn, roomPlayerInstance.gameObject);
             }
         }
-
+          
         public override void OnServerDisconnect(NetworkConnection conn)
         {
             if (conn.identity != null)
@@ -187,6 +226,33 @@ namespace Scripts.Networking
                 NotifyPlayersOfReadyState();
             }
             base.OnServerDisconnect(conn);
+        }
+
+        public NetworkGamePlayerLobby GetMyPlayer()
+        {
+            foreach (var player in GamePlayers)
+            {
+                if (player.isLocalPlayer)
+                {
+                    return player;
+                }
+            }
+            Debug.Log("Player not found");
+            return GamePlayers[0];
+        }
+
+        public NetworkGamePlayerLobby GetThisPlayer(NetworkConnection conn)
+        {
+            foreach (var player in GamePlayers)
+            {
+                var connection = player.connectionToClient;
+                if (conn == connection)
+                {
+                    return player;
+                }
+            }
+            Debug.Log("Player with that connection not found");
+            return GamePlayers[0];
         }
 
         public void NotifyPlayersOfReadyState()
@@ -207,7 +273,6 @@ namespace Scripts.Networking
                     var gameplayerInstance = Instantiate(gamePlayerPrefab);
                     gameplayerInstance.SetDisplayName(RoomPlayers[i].DisplayName);
 
-                    NetworkServer.Destroy(conn.identity.gameObject);
                     NetworkServer.ReplacePlayerForConnection(conn, gameplayerInstance.gameObject);
                 }
 
@@ -265,7 +330,7 @@ namespace Scripts.Networking
 
         public override void OnServerSceneChanged(string sceneName)
         {
-            if (Path.GetFileName(sceneName).StartsWith("Map_"));
+            if (Path.GetFileName(sceneName).StartsWith("Map_"))
             {
                 GameObject playerSpawnSystemInstance = Instantiate(playerSpawnSystem);
                 NetworkServer.Spawn(playerSpawnSystemInstance);

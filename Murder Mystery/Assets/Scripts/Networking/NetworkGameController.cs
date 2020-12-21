@@ -5,12 +5,12 @@ using Mirror;
 using System;
 using System.Linq;
 using Scripts.Input;
+using Scripts.Player;
 
 namespace Scripts.Networking
 {
-    public class RoundSystem : NetworkBehaviour
+    public class NetworkGameController : NetworkBehaviour
     {
-        [SerializeField] private Animator animator = null;
 
         private NetworkManagerLobby room;
         private NetworkManagerLobby Room
@@ -25,17 +25,47 @@ namespace Scripts.Networking
             }
         }
 
-        public void CountdownEnded()
-        {
-            animator.enabled = false;
-        }
-
         #region Server
 
         public override void OnStartServer()
         {
             NetworkManagerLobby.OnServerStopped += CleanUpServer;
             NetworkManagerLobby.OnServerReadied += CheckToStartRound;
+
+            Life.OnDeath += HandleDeath;
+        }
+
+        [Server]
+        private void TestForWinner()
+        {
+            if (Room.Murderers.Count > (Room.LivingPlayers.Count - Room.Murderers.Count))
+            {
+                  
+            }
+        }
+
+        [Server]
+        private void HandleDeath(object sender, DeathEventArgs e)
+        {
+            Debug.Log("OnDeathTriggered");
+            if (Room.LivingPlayers.Count == 1)
+            {
+                return;
+            }
+            foreach (var player in Room.LivingPlayers)
+            {
+                if (player == null || player.connectionToClient == e.ConnectionToClient)
+                {
+                    Room.LivingPlayers.Remove(player);
+                    break;
+                }
+            }
+            foreach (var player in Room.LivingPlayers)
+            {
+                Debug.Log(player.DisplayName);
+            }
+            TestForWinner();
+
         }
 
         [ServerCallback]
@@ -48,11 +78,14 @@ namespace Scripts.Networking
             NetworkManagerLobby.OnServerReadied -= CheckToStartRound;
         }
 
-        [ServerCallback]
-        public void StartRound()
+
+        IEnumerator WaitForAnimation()
         {
+            yield return new WaitForSeconds(4);
             RpcStartRound();
         }
+
+        
 
         [Server]
         private void CheckToStartRound(NetworkConnection conn)
@@ -62,18 +95,17 @@ namespace Scripts.Networking
                 return;
             }
             Room.ChooseRoles();
-            animator.enabled = true;
-            RpcStartCountdown();
+            
+            foreach (var player in Room.LivingPlayers)
+            {
+                player.playerGameManager.rolePopup.StartAnimation();
+            }
+            StartCoroutine("WaitForAnimation");
+            
         }
         #endregion
 
         #region Client
-
-        [ClientRpc]
-        private void RpcStartCountdown()
-        {
-            animator.enabled = true;
-        }
 
         [ClientRpc]
         private void RpcStartRound()

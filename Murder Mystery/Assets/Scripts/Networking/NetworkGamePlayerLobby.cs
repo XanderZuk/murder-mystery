@@ -1,4 +1,5 @@
 ﻿using Mirror;
+using Scripts.Player;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -12,8 +13,14 @@ namespace Scripts.Networking
 
         //Sync Var variables can only be changed on the server
         [SyncVar]
-        private string displayName = "Loading...";
+        public string DisplayName = "Loading...";
+        [SyncVar]
+        public bool IsMurderer;
+        [SyncVar]
+        public bool IsDetective;
         private NetworkManagerLobby room;
+        public PlayerGameManager playerGameManager;
+        
         private NetworkManagerLobby Room
         {
             get
@@ -41,7 +48,7 @@ namespace Scripts.Networking
         [Server]
         public void SetDisplayName(string displayName)
         {
-            this.displayName = displayName;
+            this.DisplayName = displayName;
         }
 
 
